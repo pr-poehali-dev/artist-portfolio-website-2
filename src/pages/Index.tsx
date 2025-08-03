@@ -1,17 +1,21 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import { useState } from 'react';
 
 export default function Index() {
-  const [selectedArtwork, setSelectedArtwork] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const artworks = [
     {
       id: 1,
       title: "Закат над Чёрным морем",
-      price: "45,000 ₽",
+      price: 45000,
+      priceFormatted: "45,000 ₽",
       image: "/img/211fd05d-26c8-46c6-bfa7-8d3d8a97a000.jpg",
       medium: "Холст, масло",
       size: "80×60 см",
@@ -20,7 +24,8 @@ export default function Index() {
     {
       id: 2,
       title: "Лазурный берег",
-      price: "32,000 ₽",
+      price: 32000,
+      priceFormatted: "32,000 ₽",
       image: "/img/d00f3874-45d2-45a6-9eba-b38f2646c530.jpg",
       medium: "Холст, масло",
       size: "70×50 см",
@@ -29,16 +34,195 @@ export default function Index() {
     {
       id: 3,
       title: "Морская идиллия",
-      price: "75,000 ₽",
+      price: 75000,
+      priceFormatted: "75,000 ₽",
       image: "/img/0851503e-b6d8-490e-8051-7039210d76f5.jpg",
       medium: "Холст, масло",
       size: "90×70 см",
       description: "Парусники в голубой дали символизируют свободу и мечты о бесконечных морских просторах."
+    },
+    // Пустые слоты для загрузки картин
+    {
+      id: 4,
+      title: "Загрузите вашу картину",
+      price: 0,
+      priceFormatted: "По запросу",
+      image: "",
+      medium: "Различные техники",
+      size: "Различные размеры",
+      description: "Здесь может быть ваша картина. Нажмите, чтобы загрузить изображение.",
+      isEmpty: true
+    },
+    {
+      id: 5,
+      title: "Загрузите вашу картину",
+      price: 0,
+      priceFormatted: "По запросу",
+      image: "",
+      medium: "Различные техники",
+      size: "Различные размеры", 
+      description: "Здесь может быть ваша картина. Нажмите, чтобы загрузить изображение.",
+      isEmpty: true
+    },
+    {
+      id: 6,
+      title: "Загрузите вашу картину",
+      price: 0,
+      priceFormatted: "По запросу",
+      image: "",
+      medium: "Различные техники",
+      size: "Различные размеры",
+      description: "Здесь может быть ваша картина. Нажмите, чтобы загрузить изображение.",
+      isEmpty: true
     }
   ];
 
+  const addToCart = (artwork) => {
+    if (artwork.isEmpty) return;
+    
+    const existingItem = cart.find(item => item.id === artwork.id);
+    if (existingItem) {
+      setCart(cart.map(item => 
+        item.id === artwork.id 
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setCart([...cart, { ...artwork, quantity: 1 }]);
+    }
+  };
+
+  const removeFromCart = (artworkId) => {
+    setCart(cart.filter(item => item.id !== artworkId));
+  };
+
+  const updateQuantity = (artworkId, newQuantity) => {
+    if (newQuantity === 0) {
+      removeFromCart(artworkId);
+    } else {
+      setCart(cart.map(item => 
+        item.id === artworkId 
+          ? { ...item, quantity: newQuantity }
+          : item
+      ));
+    }
+  };
+
+  const getTotalPrice = () => {
+    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  };
+
+  const getTotalItems = () => {
+    return cart.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  const handleImageUpload = (artworkId, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        // В реальном приложении здесь была бы логика загрузки на сервер
+        console.log('Изображение загружено для слота:', artworkId);
+        alert('Функция загрузки изображений будет доступна в следующей версии!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      {/* Fixed Cart Button */}
+      <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
+        <SheetTrigger asChild>
+          <Button 
+            className="fixed top-6 right-6 z-50 bg-black text-white hover:bg-gray-800 rounded-full p-3 shadow-lg"
+          >
+            <Icon name="ShoppingCart" size={24} />
+            {getTotalItems() > 0 && (
+              <Badge className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full min-w-[20px] h-5 flex items-center justify-center text-xs">
+                {getTotalItems()}
+              </Badge>
+            )}
+          </Button>
+        </SheetTrigger>
+        <SheetContent className="w-[400px] sm:w-[540px]">
+          <SheetHeader>
+            <SheetTitle className="text-2xl font-serif">Корзина</SheetTitle>
+          </SheetHeader>
+          
+          <div className="mt-6 space-y-4">
+            {cart.length === 0 ? (
+              <div className="text-center py-12">
+                <Icon name="ShoppingCart" size={48} className="mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500">Корзина пуста</p>
+                <p className="text-sm text-gray-400">Добавьте картины для покупки</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                  {cart.map((item) => (
+                    <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
+                      <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
+                        <img 
+                          src={item.image} 
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      
+                      <div className="flex-1">
+                        <h3 className="font-medium text-sm">{item.title}</h3>
+                        <p className="text-xs text-gray-500">{item.size}</p>
+                        <p className="text-sm font-medium">{item.priceFormatted}</p>
+                        
+                        <div className="flex items-center gap-2 mt-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="w-8 h-8 p-0"
+                          >
+                            -
+                          </Button>
+                          <span className="text-sm">{item.quantity}</span>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="w-8 h-8 p-0"
+                          >
+                            +
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => removeFromCart(item.id)}
+                            className="ml-auto w-8 h-8 p-0"
+                          >
+                            <Icon name="X" size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="border-t pt-4 space-y-4">
+                  <div className="flex justify-between text-lg font-medium">
+                    <span>Итого:</span>
+                    <span>{getTotalPrice().toLocaleString('ru-RU')} ₽</span>
+                  </div>
+                  
+                  <Button className="w-full bg-black text-white hover:bg-gray-800">
+                    Оформить заказ
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {/* Header */}
       <header className="py-12 px-6 text-center border-b border-gray-100">
         <h1 className="text-5xl font-serif text-black mb-4 font-light tracking-wide animate-fade-in">
@@ -62,22 +246,46 @@ export default function Index() {
               <Card key={artwork.id} className="group border-0 shadow-none bg-white animate-fade-in" style={{animationDelay: `${index * 200}ms`}}>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <div className="aspect-[4/5] overflow-hidden mb-6 bg-gray-50 cursor-pointer">
-                      <img 
-                        src={artwork.image}
-                        alt={artwork.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
+                    <div className="aspect-[4/5] overflow-hidden mb-6 bg-gray-50 cursor-pointer relative">
+                      {artwork.isEmpty ? (
+                        <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors">
+                          <div className="text-center">
+                            <Icon name="ImagePlus" size={48} className="mx-auto text-gray-400 mb-2" />
+                            <p className="text-sm text-gray-500">Нажмите для загрузки</p>
+                            <input 
+                              type="file" 
+                              accept="image/*"
+                              onChange={(e) => handleImageUpload(artwork.id, e)}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <img 
+                          src={artwork.image}
+                          alt={artwork.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      )}
                     </div>
                   </DialogTrigger>
                   <DialogContent className="max-w-4xl w-full">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="aspect-square overflow-hidden rounded-lg">
-                        <img 
-                          src={artwork.image}
-                          alt={artwork.title}
-                          className="w-full h-full object-cover"
-                        />
+                        {artwork.isEmpty ? (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300">
+                            <div className="text-center">
+                              <Icon name="ImagePlus" size={64} className="mx-auto text-gray-400 mb-4" />
+                              <p className="text-gray-500">Изображение не загружено</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <img 
+                            src={artwork.image}
+                            alt={artwork.title}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
                       </div>
                       <div className="space-y-6">
                         <div>
@@ -93,11 +301,16 @@ export default function Index() {
                         <div className="border-t pt-6">
                           <div className="flex items-center justify-between">
                             <span className="text-2xl font-medium text-black">
-                              {artwork.price}
+                              {artwork.priceFormatted}
                             </span>
-                            <Button className="bg-black text-white hover:bg-gray-800 px-8 py-3">
-                              Заказать картину
-                            </Button>
+                            {!artwork.isEmpty && (
+                              <Button 
+                                className="bg-black text-white hover:bg-gray-800 px-8 py-3"
+                                onClick={() => addToCart(artwork)}
+                              >
+                                Добавить в корзину
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -117,14 +330,24 @@ export default function Index() {
                   
                   <div className="flex items-center justify-between pt-4">
                     <span className="text-lg font-medium text-black">
-                      {artwork.price}
+                      {artwork.priceFormatted}
                     </span>
                     
-                    <Button 
-                      className="bg-black text-white hover:bg-gray-800 px-6 py-2 text-sm font-medium"
-                    >
-                      Купить
-                    </Button>
+                    {artwork.isEmpty ? (
+                      <Button 
+                        className="bg-gray-300 text-gray-600 px-6 py-2 text-sm font-medium cursor-not-allowed"
+                        disabled
+                      >
+                        Загрузить
+                      </Button>
+                    ) : (
+                      <Button 
+                        className="bg-black text-white hover:bg-gray-800 px-6 py-2 text-sm font-medium"
+                        onClick={() => addToCart(artwork)}
+                      >
+                        Купить
+                      </Button>
+                    )}
                   </div>
                 </div>
               </Card>
